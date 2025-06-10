@@ -41,7 +41,7 @@ export default function Profile() {
         </div>
       </main>
 
-      <Navbar />  
+      <Footer />
     </>
   );
 }
