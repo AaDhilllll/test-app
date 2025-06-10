@@ -3,7 +3,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/Nav-land';
 import Carousel from '@/components/Carousel'; 
 import Footer from '@/components/Footer';
 

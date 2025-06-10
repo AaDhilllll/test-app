@@ -2,7 +2,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar'; 
+import Navbar from '@/components/Nav-browse-guest'; 
 import Footer from '@/components/Footer';
 
 export default function Browse() {

@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
 import Head from 'next/head';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 
 export default function AuthenticatedHome() {
@@ -14,15 +16,7 @@ export default function AuthenticatedHome() {
         <link rel="stylesheet" href="/style.css" />
       </Head>
 
-      <header className="main-header">
-        <div className="logo">CineMatch</div>
-        <nav className="nav-links">
-          <Link href="/">Landing</Link>
-          <Link href="/browse">Browse</Link>
-          <Link href="/home">Home</Link>
-          <Link href="/logout">Logout</Link>
-        </nav>
-      </header>
+      <Navbar />
 
       <main className="auth-home">
         <h2>Welcome back to CineMatch 🎬</h2>
@@ -34,9 +28,7 @@ export default function AuthenticatedHome() {
         </div>
       </main>
 
-      <footer className="main-footer">
-        <p>&copy; 2025 CineMatch. All rights reserved.</p>
-      </footer>
+      <Footer />
     </>
   );
 }
