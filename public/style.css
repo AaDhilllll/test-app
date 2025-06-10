@@ -11,15 +11,21 @@ body {
 }
 
 .main-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  padding: 1rem 2rem;
+  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 50px;
-  background-color: rgba(0, 0, 0, 0.8);
-  position: absolute;
-  width: 100%;
-  z-index: 1000;
+  z-index: 1000; /* keeps it on top of other content */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
+
 
 .logo {
   font-size: 1.8rem;

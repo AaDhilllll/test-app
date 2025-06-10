@@ -1,6 +1,8 @@
 'use client';
 import Head from 'next/head';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function Login() {
   return (
@@ -12,17 +14,8 @@ export default function Login() {
         <link rel="icon" type="image/jpg" href="images/favicon-jpg.jpg" ></link>
         <link rel="stylesheet" href="/style.css" />
       </Head>
-      <header className="main-header">
-        <div className="logo">CineMatch</div>
-        <nav className="nav-links">
-          <Link href="/">Home</Link>
-          <Link href="/browse">Browse</Link>
-          <Link href="/watchlist">Watchlist</Link>
-          <Link href="/profile">Profile</Link>
-          <Link href="/login">Login</Link>
-          <Link href="/signup">Signup</Link>
-        </nav>
-      </header>
+      
+      <Navbar />
 
       <main className="auth-container">
         <div className="auth-box">
@@ -38,9 +31,7 @@ export default function Login() {
         </div>
       </main>
 
-      <footer className="main-footer">
-        <p>&copy; 2025 CineMatch. All rights reserved.</p>
-      </footer>
+      <Footer />
     </>
   );
 }

@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
 import Head from 'next/head';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function Watchlist() {
   return (
@@ -13,17 +15,7 @@ export default function Watchlist() {
         <link rel="stylesheet" href="/style.css" />
       </Head>
 
-      <header className="main-header">
-        <div className="logo">CineMatch</div>
-        <nav className="nav-links">
-          <Link href="/">Home</Link>
-          <Link href="/browse">Browse</Link>
-          <Link href="/watchlist">Watchlist</Link>
-          <Link href="/profile">Profile</Link>
-          <Link href="/login">Login</Link>
-          <Link href="/signup">Signup</Link>
-        </nav>
-      </header>
+      <Navbar />
 
       <main className="watchlist-container">
         <h2>Your Watchlist</h2>
@@ -41,9 +33,7 @@ export default function Watchlist() {
         </div>
       </main>
 
-      <footer className="main-footer">
-        <p>&copy; 2025 CineMatch. All rights reserved.</p>
-      </footer>
+      <Footer />
     </>
   );
 }
