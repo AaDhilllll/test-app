@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     // Get the generative model
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    // Create a structured prompt for movie-related queries
+    // a structured prompt for movie-related queries
     const systemPrompt = `
 You are Cine-bot, an AI assistant specialized in movies, web series, and TV shows. 
 Your responses should be informative, engaging, and focused on entertainment content.

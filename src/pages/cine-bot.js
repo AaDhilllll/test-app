@@ -1,4 +1,3 @@
-// pages/cine-bot.js
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
