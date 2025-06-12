@@ -28,7 +28,7 @@ export default function AuthenticatedHome() {
         <button className="btn" onClick={() => router.push('/watchlist')}>
           View Watchlist
         </button>
-        <button className="btn" onClick={() => router.push('/chat')}>
+        <button className="btn" onClick={() => router.push('/cine-bot')}>
           Ask AI for Suggestions
         </button>
       </div>
