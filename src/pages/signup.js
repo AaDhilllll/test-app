@@ -49,7 +49,7 @@ export default function Signup() {
         createdAt: serverTimestamp(),
       });
 
-      // ✅ Auto-login happens automatically, just redirect
+      // Auto-login happens automatically, just redirect
       router.push('/home');
     } catch (err) {
       setError((prev) => ({ ...prev, general: err.message }));

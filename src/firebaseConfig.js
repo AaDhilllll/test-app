@@ -13,9 +13,7 @@ const firebaseConfig = {
   measurementId: "G-MHS80RX6BE"
 };
 
-// ✅ Prevent duplicate initialization
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// ✅ Auth and Firestore instances
 export const auth = getAuth(app);
 export const db = getFirestore(app);
