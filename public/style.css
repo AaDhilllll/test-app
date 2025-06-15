@@ -273,6 +273,13 @@ body {
   background-color: #f6121d;
 }
 
+.error-text {
+  color: #ff4d4f;
+  font-size: 0.85rem;
+  margin: 5px 0 10px 0;
+}
+
+
 .switch-text {
   color: #bbb;
   font-size: 0.9rem;
@@ -349,7 +356,7 @@ body {
 }
 
 .btn-secondary {
-  background-color: #444;
+  background-color: #e50914;
   color: #fff;
 }
 
@@ -809,3 +816,47 @@ body {
 .home-buttons .btn:hover {
   background-color: #b00610;
 }
+
+.results-section {
+  padding: 40px;
+}
+.results-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.result-card {
+  width: 180px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+
+.results-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.result-card {
+  background-color: rgba(255, 255, 255, 0.05);
+  width: 180px;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.result-card img {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.chip-selected {
+  background-color: rgba(229,9,20,0.7);
+}
+
+
+.btn-selected {
+  background-color: #e50914;
+}
+
