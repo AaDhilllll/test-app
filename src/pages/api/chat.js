@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     }
 
     // Get the generative model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // a structured prompt for movie-related queries
     const systemPrompt = `
