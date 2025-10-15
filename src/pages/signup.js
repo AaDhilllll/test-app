@@ -3,9 +3,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Nav-sl';
 import Footer from '@/components/Footer';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import { useState } from 'react';
 import { auth, db } from '@/firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -15,8 +14,6 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  // Error & success states
   const [error, setError] = useState({ name: '', email: '', password: '', general: '' });
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,65 +25,46 @@ export default function Signup() {
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
-    if (!name.trim()) {
-      return setError((prev) => ({ ...prev, name: 'Name is required.' }));
-    }
-
-    if (!email.trim()) {
-      return setError((prev) => ({ ...prev, email: 'Email is required.' }));
-    }
-
-    if (!passwordRegex.test(password)) {
-      return setError((prev) => ({
-        ...prev,
+    if (!name.trim()) return setError((p) => ({ ...p, name: 'Name is required.' }));
+    if (!email.trim()) return setError((p) => ({ ...p, email: 'Email is required.' }));
+    if (!passwordRegex.test(password))
+      return setError((p) => ({
+        ...p,
         password:
           'Password must be at least 6 characters long and include uppercase, lowercase, and a number.',
       }));
-    }
 
     try {
       setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Store user info in Firestore
+      // Firestore write
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         name,
         email,
         createdAt: serverTimestamp(),
       });
 
-      // Show success message
-      setSuccess('Signed up successfully! Redirecting to login page...');
+      setSuccess('✅ Signed up successfully! Redirecting to login...');
+      setLoading(false);
+
+      // Reset form fields
       setName('');
       setEmail('');
       setPassword('');
 
       // Redirect after 2 seconds
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      setTimeout(() => router.push('/login'), 2000);
     } catch (err) {
       console.error('Signup Error:', err);
-      let message = 'Signup failed. Please try again.';
-
-      switch (err.code) {
-        case 'auth/email-already-in-use':
-          message = 'This email is already registered. Please log in instead.';
-          break;
-        case 'auth/invalid-email':
-          message = 'Please enter a valid email address.';
-          break;
-        case 'auth/weak-password':
-          message = 'Password is too weak. Try a stronger one.';
-          break;
-        default:
-          message = err.message;
-          break;
-      }
-
-      setError((prev) => ({ ...prev, general: message }));
-    } finally {
       setLoading(false);
+      let msg = 'Signup failed. Please try again.';
+
+      if (err.code === 'auth/email-already-in-use') msg = 'This email is already registered.';
+      else if (err.code === 'auth/invalid-email') msg = 'Invalid email format.';
+      else if (err.code === 'auth/weak-password') msg = 'Weak password. Try a stronger one.';
+
+      setError((p) => ({ ...p, general: msg }));
     }
   };
 
