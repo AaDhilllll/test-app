@@ -5,7 +5,7 @@ import Navbar from '@/components/Nav-sl';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/firebaseConfig';
 
 export default function Login() {
@@ -14,10 +14,13 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState({ email: '', password: '', general: '' });
+  const [loading, setLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError({ email: '', password: '', general: '' }); // Reset error
+    setError({ email: '', password: '', general: '' });
+    setResetMessage('');
 
     if (!email.trim()) {
       return setError((prev) => ({ ...prev, email: 'Email is required.' }));
@@ -28,10 +31,62 @@ export default function Login() {
     }
 
     try {
+      setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/home');
     } catch (err) {
-      setError((prev) => ({ ...prev, general: err.message }));
+      console.error('Login Error:', err);
+      let message = 'Login failed. Please try again.';
+
+      // ✅ Handle specific Firebase Auth errors
+      switch (err.code) {
+        case 'auth/user-not-found':
+          message = 'No account found with this email.';
+          break;
+        case 'auth/wrong-password':
+          message = 'Incorrect password. Please try again.';
+          break;
+        case 'auth/invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'auth/too-many-requests':
+          message =
+            'Too many failed attempts. Please try again later or reset your password.';
+          break;
+        default:
+          message = err.message;
+          break;
+      }
+
+      setError((prev) => ({ ...prev, general: message }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    setError({ email: '', password: '', general: '' });
+    setResetMessage('');
+
+    if (!email.trim()) {
+      return setError((prev) => ({
+        ...prev,
+        email: 'Enter your email address to reset your password.',
+      }));
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetMessage('Password reset link sent to your email.');
+    } catch (err) {
+      console.error('Password Reset Error:', err);
+      let message = 'Could not send reset email.';
+      if (err.code === 'auth/user-not-found') {
+        message = 'No user found with this email address.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'Invalid email address.';
+      }
+      setError((prev) => ({ ...prev, general: message }));
     }
   };
 
@@ -57,6 +112,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
             {error.email && <p className="error-text">{error.email}</p>}
 
@@ -66,11 +122,16 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
             {error.password && <p className="error-text">{error.password}</p>}
 
-            <button type="submit">Login</button>
+            <button type="submit" disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+
             {error.general && <p className="error-text">{error.general}</p>}
+            {resetMessage && <p className="success-text">{resetMessage}</p>}
           </form>
 
           <p className="switch-text">
@@ -80,18 +141,7 @@ export default function Login() {
           <p className="switch-text">
             <button
               type="button"
-              onClick={async () => {
-                if (!email.trim()) {
-                  return setError((prev) => ({ ...prev, email: 'Enter your email to reset password.' }));
-                }
-                try {
-                  const { sendPasswordResetEmail } = await import('firebase/auth');
-                  await sendPasswordResetEmail(auth, email);
-                  alert('Password reset link sent to your email.');
-                } catch (err) {
-                  setError((prev) => ({ ...prev, general: err.message }));
-                }
-              }}
+              onClick={handlePasswordReset}
               style={{
                 background: 'none',
                 border: 'none',
