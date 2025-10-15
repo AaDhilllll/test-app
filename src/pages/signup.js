@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { auth, db } from '@/firebaseConfig';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Signup() {
@@ -15,44 +15,62 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  // Error state
   const [error, setError] = useState({ name: '', email: '', password: '', general: '' });
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setError({ name: '', email: '', password: '', general: '' }); // Clear errors
+    setError({ name: '', email: '', password: '', general: '' });
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
     if (!name.trim()) {
       return setError((prev) => ({ ...prev, name: 'Name is required.' }));
     }
-
     if (!email.trim()) {
       return setError((prev) => ({ ...prev, email: 'Email is required.' }));
     }
-
     if (!passwordRegex.test(password)) {
       return setError((prev) => ({
         ...prev,
-        password: 'Password must be at least 6 characters long and include uppercase, lowercase, and a number.',
+        password:
+          'Password must be at least 6 characters long and include uppercase, lowercase, and a number.',
       }));
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // ✅ Check if the email is already registered
+      const existingMethods = await fetchSignInMethodsForEmail(auth, email);
+      if (existingMethods.length > 0) {
+        return setError((prev) => ({
+          ...prev,
+          email: 'This email is already registered. Please log in instead.',
+        }));
+      }
 
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
+      // ✅ Create new user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // ✅ Create Firestore document only after successful user creation
+      await setDoc(doc(db, 'users', user.uid), {
         name,
         email,
         createdAt: serverTimestamp(),
       });
 
-      // Auto-login happens automatically, just redirect
+      // ✅ Redirect user to home after signup
       router.push('/home');
     } catch (err) {
-      setError((prev) => ({ ...prev, general: err.message }));
+      let errorMessage = 'An error occurred during signup.';
+      if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already in use. Try logging in instead.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address format.';
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak.';
+      }
+      setError((prev) => ({ ...prev, general: errorMessage }));
+      console.error('Signup Error:', err);
     }
   };
 
