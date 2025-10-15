@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { auth, db } from '@/firebaseConfig';
-import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Signup() {
@@ -15,20 +15,27 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Error & success states
   const [error, setError] = useState({ name: '', email: '', password: '', general: '' });
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setError({ name: '', email: '', password: '', general: '' });
+    setSuccess('');
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
     if (!name.trim()) {
       return setError((prev) => ({ ...prev, name: 'Name is required.' }));
     }
+
     if (!email.trim()) {
       return setError((prev) => ({ ...prev, email: 'Email is required.' }));
     }
+
     if (!passwordRegex.test(password)) {
       return setError((prev) => ({
         ...prev,
@@ -38,39 +45,48 @@ export default function Signup() {
     }
 
     try {
-      // ✅ Check if the email is already registered
-      const existingMethods = await fetchSignInMethodsForEmail(auth, email);
-      if (existingMethods.length > 0) {
-        return setError((prev) => ({
-          ...prev,
-          email: 'This email is already registered. Please log in instead.',
-        }));
-      }
-
-      // ✅ Create new user in Firebase Authentication
+      setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
 
-      // ✅ Create Firestore document only after successful user creation
-      await setDoc(doc(db, 'users', user.uid), {
+      // Store user info in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
         name,
         email,
         createdAt: serverTimestamp(),
       });
 
-      // ✅ Redirect user to home after signup
-      router.push('/home');
+      // Show success message
+      setSuccess('Signed up successfully! Redirecting to login page...');
+      setName('');
+      setEmail('');
+      setPassword('');
+
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
     } catch (err) {
-      let errorMessage = 'An error occurred during signup.';
-      if (err.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email is already in use. Try logging in instead.';
-      } else if (err.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address format.';
-      } else if (err.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak.';
-      }
-      setError((prev) => ({ ...prev, general: errorMessage }));
       console.error('Signup Error:', err);
+      let message = 'Signup failed. Please try again.';
+
+      switch (err.code) {
+        case 'auth/email-already-in-use':
+          message = 'This email is already registered. Please log in instead.';
+          break;
+        case 'auth/invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'auth/weak-password':
+          message = 'Password is too weak. Try a stronger one.';
+          break;
+        default:
+          message = err.message;
+          break;
+      }
+
+      setError((prev) => ({ ...prev, general: message }));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,6 +110,7 @@ export default function Signup() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              disabled={loading}
             />
             {error.name && <p className="error-text">{error.name}</p>}
 
@@ -103,6 +120,7 @@ export default function Signup() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
             {error.email && <p className="error-text">{error.email}</p>}
 
@@ -112,11 +130,16 @@ export default function Signup() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
             {error.password && <p className="error-text">{error.password}</p>}
 
-            <button type="submit">Sign Up</button>
+            <button type="submit" disabled={loading}>
+              {loading ? 'Signing up...' : 'Sign Up'}
+            </button>
+
             {error.general && <p className="error-text">{error.general}</p>}
+            {success && <p className="success-text">{success}</p>}
           </form>
 
           <p className="switch-text">
