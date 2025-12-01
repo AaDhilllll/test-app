@@ -12,6 +12,7 @@ import {
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 export default function Watchlist() {
@@ -19,24 +20,41 @@ export default function Watchlist() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchWatchlist = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        router.push('/login');
-        return;
-      }
+    let unsub = null;
 
-      const listRef = collection(db, 'users', user.uid, 'watchlist');
-      const snapshot = await getDocs(listRef);
-      const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setWatchlist(items);
+    const setup = () => {
+      unsub = onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          router.push('/login');
+          return;
+        }
+
+        try {
+          const listRef = collection(db, 'users', user.uid, 'watchlist');
+          const snapshot = await getDocs(listRef);
+          const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setWatchlist(items);
+        } catch (err) {
+          console.error('Error fetching watchlist:', err);
+        }
+      });
     };
 
-    fetchWatchlist();
+    setup();
+
+    return () => {
+      if (unsub) unsub();
+    };
   }, [router]);
 
   const markAsWatched = async (id) => {
     const user = auth.currentUser;
+    if (!user) {
+      alert('Please login first');
+      router.push('/login');
+      return;
+    }
+
     const movieRef = doc(db, 'users', user.uid, 'watchlist', id);
     await updateDoc(movieRef, { watched: true });
 
@@ -49,8 +67,21 @@ export default function Watchlist() {
 
   const removeItem = async (id) => {
     const user = auth.currentUser;
+    if (!user) {
+      alert('Please login first');
+      router.push('/login');
+      return;
+    }
+
     const movieRef = doc(db, 'users', user.uid, 'watchlist', id);
-    await deleteDoc(movieRef);
+    try {
+      await deleteDoc(movieRef);
+    } catch (err) {
+      console.error('Error deleting watchlist item:', err);
+      alert('Failed to remove item. Check console for details.');
+      return;
+    }
+
     setWatchlist(prev => prev.filter(item => item.id !== id));
   };
 
