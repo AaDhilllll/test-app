@@ -6,6 +6,8 @@ import Footer from '@/components/Footer';
 import { useState } from 'react';
 import { auth, db } from '@/firebaseConfig';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Browse() {
@@ -13,7 +15,13 @@ export default function Browse() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [user, setUser] = useState(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    return () => unsub && unsub();
+  }, []);
 
     const searchWikipedia = async (movieTitle) => {
       try {
@@ -99,15 +107,29 @@ export default function Browse() {
   };
 
   const addToWatchlist = async () => {
-    const user = auth.currentUser;
-    if (!user) {
+    // Ensure auth state is available
+    const waitForAuth = () => new Promise((resolve) => {
+      if (auth.currentUser) return resolve(auth.currentUser);
+      const unsub = onAuthStateChanged(auth, (u) => {
+        unsub();
+        resolve(u);
+      });
+      // Fallback timeout
+      setTimeout(() => {
+        try { unsub(); } catch (e) {}
+        resolve(auth.currentUser);
+      }, 3000);
+    });
+
+    const currentUser = user || await waitForAuth();
+    if (!currentUser) {
       alert('Please log in to add to watchlist');
       router.push('/login');
       return;
     }
 
     try {
-      const ref = doc(db, 'users', user.uid, 'watchlist', result.title);
+      const ref = doc(db, 'users', currentUser.uid, 'watchlist', result.title);
       await setDoc(ref, {
         title: result.title,
         genre: result.genre,
@@ -118,7 +140,7 @@ export default function Browse() {
       alert(`${result.title} added to your watchlist!`);
     } catch (err) {
       console.error('Error saving to watchlist:', err);
-      alert('Failed to add movie to watchlist.');
+      alert('Failed to add movie to watchlist. Check console for details.');
     }
   };
 

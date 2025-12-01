@@ -28,50 +28,70 @@ export default function Profile() {
 
     unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
+        // No user signed in — redirect to login
         router.push('/login');
+        setLoading(false);
         return;
       }
 
       const userRef = doc(db, 'users', currentUser.uid);
-      const userDoc = await getDoc(userRef);
 
-      const baseData = userDoc.exists()
-        ? {
-            ...userDoc.data(),
-            email: currentUser.email,
-            memberSince: userDoc.data().createdAt?.toDate().toDateString() || 'N/A',
-          }
-        : {
-            name: 'Unknown',
-            email: currentUser.email,
-            memberSince: 'N/A',
-          };
+      try {
+        const userDoc = await getDoc(userRef);
 
-      const watchlistRef = collection(userRef, 'watchlist');
-      unsubscribeWatchlist = onSnapshot(watchlistRef, (snapshot) => {
-        const items = snapshot.docs.map((doc) => doc.data());
-        const watched = items.filter(item => item.watched).length;
+        const createdAt = userDoc?.data()?.createdAt;
+        const memberSince = createdAt && typeof createdAt.toDate === 'function'
+          ? createdAt.toDate().toDateString()
+          : 'N/A';
 
-        // Calculate favorite genre
-        const genreCount = {};
-        items.forEach(item => {
-          if (item.genre && item.watched) {
-            genreCount[item.genre] = (genreCount[item.genre] || 0) + 1;
-          }
-        });
+        const baseData = userDoc && userDoc.exists()
+          ? { ...userDoc.data(), email: currentUser.email, memberSince }
+          : { name: 'Unknown', email: currentUser.email, memberSince: 'N/A' };
 
-        const favoriteGenre = Object.entries(genreCount)
-          .sort((a, b) => b[1] - a[1])?.[0]?.[0] || '–';
+        // Subscribe to watchlist subcollection
+        try {
+          const watchlistRef = collection(userRef, 'watchlist');
+          unsubscribeWatchlist = onSnapshot(watchlistRef, (snapshot) => {
+            try {
+              const items = snapshot.docs.map((d) => d.data());
+              const watched = items.filter(item => item.watched).length;
 
-        setUserData({
-          ...baseData,
-          watchlistCount: items.length,
-          watchedCount: watched,
-          favoriteGenre,
-        });
+              const genreCount = {};
+              items.forEach(item => {
+                if (item.genre && item.watched) {
+                  genreCount[item.genre] = (genreCount[item.genre] || 0) + 1;
+                }
+              });
 
+              const favoriteGenre = Object.entries(genreCount)
+                .sort((a, b) => b[1] - a[1])?.[0]?.[0] || '–';
+
+              setUserData({
+                ...baseData,
+                watchlistCount: items.length,
+                watchedCount: watched,
+                favoriteGenre,
+              });
+
+              setLoading(false);
+            } catch (innerErr) {
+              console.error('Error processing watchlist snapshot:', innerErr);
+              setLoading(false);
+            }
+          }, (snapshotErr) => {
+            console.error('Watchlist snapshot error:', snapshotErr);
+            setLoading(false);
+          });
+        } catch (subErr) {
+          console.error('Error subscribing to watchlist:', subErr);
+          setUserData(baseData);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error fetching user document:', err);
+        setUserData({ name: 'Unknown', email: currentUser.email, memberSince: 'N/A' });
         setLoading(false);
-      });
+      }
     });
 
     return () => {

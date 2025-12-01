@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { auth, db } from '@/firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function Signup() {
   const router = useRouter();
@@ -42,16 +43,33 @@ export default function Signup() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         name,
         email,
         createdAt: serverTimestamp(),
       });
 
-      // Auto-login happens automatically, just redirect
+      // Ensure user is present in auth state before redirecting (helps with some timing issues)
+      if (!userCredential?.user) {
+        console.warn('User credential returned without user object after signup. Waiting for auth state...');
+        await new Promise((resolve) => {
+          const unsub = onAuthStateChanged(auth, (u) => {
+            if (u) {
+              unsub();
+              resolve(true);
+            }
+          });
+          // Safety timeout in case auth state doesn't arrive
+          setTimeout(() => {
+            try { unsub(); } catch (e) {}
+            resolve(false);
+          }, 3000);
+        });
+      }
+
       router.push('/home');
     } catch (err) {
+      console.error('Signup error:', err);
       setError((prev) => ({ ...prev, general: err.message }));
     }
   };
