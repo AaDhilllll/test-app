@@ -3,7 +3,7 @@
 export default function Footer() {
   return (
     <footer className="main-footer">
-      <p>&copy; 2025 CineMatch. All rights reserved.</p>
+      <p> CineMatch 2025 - Done for personal use</p>
     </footer>
   );
 }
